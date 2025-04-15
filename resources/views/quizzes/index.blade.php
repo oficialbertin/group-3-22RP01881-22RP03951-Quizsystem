@@ -27,7 +27,7 @@
                                     <tr>
                                         <th>Title</th>
                                         <th>Description</th>
-                                        <th>Duration (minutes)</th>
+                                        <th>Time Limit (minutes)</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
@@ -37,7 +37,7 @@
                                         <tr>
                                             <td>{{ $quiz->title }}</td>
                                             <td>{{ Str::limit($quiz->description, 50) }}</td>
-                                            <td>{{ $quiz->duration }}</td>
+                                            <td>{{ $quiz->time_limit }}</td>
                                             <td>
                                                 @if($quiz->is_published)
                                                     <span class="badge bg-success">Published</span>
@@ -86,13 +86,14 @@
                                             <h5 class="card-title">{{ $quiz->title }}</h5>
                                             <p class="card-text">{{ Str::limit($quiz->description, 100) }}</p>
                                             <ul class="list-unstyled">
-                                                <li><strong>Duration:</strong> {{ $quiz->duration }} minutes</li>
+                                                <li><strong>Time Limit:</strong> {{ $quiz->time_limit }} minutes</li>
                                                 <li><strong>Questions:</strong> {{ $quiz->questions->count() }}</li>
+                                                <li><strong>Total Marks:</strong> {{ $quiz->total_marks }}</li>
                                             </ul>
                                         </div>
                                         <div class="card-footer">
                                             @php
-                                                $attempt = $quiz->attempts()->where('user_id', Auth::id())->latest()->first();
+                                                $attempt = $quiz->quizAttempts()->where('user_id', Auth::id())->latest()->first();
                                             @endphp
                                             
                                             @if(!$attempt)
@@ -101,7 +102,7 @@
                                                     <input type="hidden" name="quiz_id" value="{{ $quiz->id }}">
                                                     <button type="submit" class="btn btn-primary">Start Quiz</button>
                                                 </form>
-                                            @elseif($attempt->completed_at)
+                                            @elseif($attempt->end_time)
                                                 <a href="{{ route('results.show', $attempt) }}" class="btn btn-info">View Result</a>
                                             @else
                                                 <a href="{{ route('quiz-attempts.show', $attempt) }}" class="btn btn-warning">Continue Quiz</a>

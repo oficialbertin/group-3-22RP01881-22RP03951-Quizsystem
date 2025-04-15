@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Quiz;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class QuizController extends Controller
 {
@@ -33,6 +35,7 @@ class QuizController extends Controller
                     $query->whereNull('end_time')
                         ->orWhere('end_time', '>=', now());
                 })
+                ->whereHas('questions')
                 ->latest()
                 ->paginate(10);
         }
@@ -119,17 +122,25 @@ class QuizController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'time_limit' => 'nullable|integer|min:1',
-            'total_marks' => 'required|integer|min:1',
-            'is_published' => 'boolean',
+            'duration' => 'nullable|integer|min:1',
             'start_time' => 'nullable|date',
-            'end_time' => 'nullable|date|after:start_time',
+            'end_time' => 'nullable|date|after_or_equal:start_time',
         ]);
 
-        $quiz->update($validated);
-
-        return redirect()->route('quizzes.show', $quiz)
-            ->with('success', 'Quiz updated successfully.');
+        try {
+            DB::beginTransaction();
+            
+            $quiz->update($validated);
+            
+            DB::commit();
+            return redirect()->route('quizzes.show', $quiz)
+                ->with('success', 'Quiz updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to update quiz: ' . $e->getMessage());
+            return back()->withInput()
+                ->with('error', 'Failed to update quiz: ' . $e->getMessage());
+        }
     }
 
     /**

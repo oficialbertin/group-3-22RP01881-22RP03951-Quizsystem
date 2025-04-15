@@ -2,83 +2,72 @@
 
 @section('content')
 <div class="container">
-    <div class="card mb-4">
-        <div class="card-header">
-            <h2>{{ $attempt->quiz->title }} - Results</h2>
-        </div>
-        <div class="card-body">
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <h4>Quiz Information</h4>
-                    <p>
-                        <strong>Student:</strong> {{ $attempt->user->name }}<br>
-                        <strong>Score:</strong> {{ $attempt->score }}/{{ $attempt->total_questions }}<br>
-                        <strong>Percentage:</strong> {{ number_format(($attempt->score / $attempt->total_questions) * 100, 1) }}%<br>
-                        <strong>Time Taken:</strong> {{ $attempt->completed_at->diffForHumans($attempt->started_at) }}<br>
-                        <strong>Completed At:</strong> {{ $attempt->completed_at->format('Y-m-d H:i:s') }}
-                    </p>
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">Quiz Results: {{ $quizAttempt->quiz->title }}</h3>
                 </div>
-            </div>
 
-            <h4>Questions and Answers</h4>
-            @foreach($attempt->answers as $answer)
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title">Question {{ $loop->iteration }}</h5>
-                        <p class="card-text">{{ $answer->question->text }}</p>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>Student:</strong> {{ $quizAttempt->user->name }}</p>
+                            <p><strong>Score:</strong> {{ $quizAttempt->score ?? 0 }} / {{ $quizAttempt->quiz->total_marks }}</p>
+                            <p><strong>Percentage:</strong> {{ $quizAttempt->score ? number_format(($quizAttempt->score / $quizAttempt->quiz->total_marks) * 100, 1) : 0 }}%</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Started At:</strong> {{ $quizAttempt->start_time ? $quizAttempt->start_time->format('M d, Y H:i') : 'Not started' }}</p>
+                            <p><strong>Completed At:</strong> {{ $quizAttempt->end_time ? $quizAttempt->end_time->format('M d, Y H:i') : 'In progress' }}</p>
+                            @if($quizAttempt->start_time && $quizAttempt->end_time)
+                                <p><strong>Duration:</strong> {{ $quizAttempt->start_time->diffInMinutes($quizAttempt->end_time) }} minutes</p>
+                            @endif
+                        </div>
+                    </div>
 
-                        @if($answer->question->type === 'multiple_choice' || $answer->question->type === 'true_false')
-                            <div class="options">
-                                @foreach($answer->question->options as $option)
-                                    <div class="option @if($option->id === $answer->selected_option_id) selected @endif @if($option->is_correct) correct @endif">
-                                        {{ $option->text }}
-                                        @if($option->id === $answer->selected_option_id && $option->is_correct)
-                                            <span class="badge bg-success">Correct Answer</span>
-                                        @elseif($option->id === $answer->selected_option_id && !$option->is_correct)
-                                            <span class="badge bg-danger">Your Answer</span>
-                                        @elseif($option->is_correct)
-                                            <span class="badge bg-success">Correct Answer</span>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="short-answer">
-                                <p><strong>Your Answer:</strong></p>
-                                <p>{{ $answer->text_answer }}</p>
-                                @if(auth()->user()->isLecturer())
-                                    <div class="mt-3">
-                                        <form action="{{ route('answers.grade', $answer->id) }}" method="POST">
-                                            @csrf
-                                            <div class="form-group">
-                                                <label for="score">Score (out of 1):</label>
-                                                <input type="number" name="score" id="score" class="form-control" min="0" max="1" step="0.1" value="{{ $answer->score ?? 0 }}">
-                                            </div>
-                                            <div class="form-group mt-2">
-                                                <label for="feedback">Feedback:</label>
-                                                <textarea name="feedback" id="feedback" class="form-control" rows="2">{{ $answer->feedback }}</textarea>
-                                            </div>
-                                            <button type="submit" class="btn btn-primary mt-2">Save Grade</button>
-                                        </form>
-                                    </div>
-                                @else
-                                    @if($answer->feedback)
-                                        <div class="mt-3">
-                                            <p><strong>Score:</strong> {{ $answer->score }}/1</p>
-                                            <p><strong>Feedback:</strong> {{ $answer->feedback }}</p>
-                                        </div>
+                    <hr>
+
+                    <h4 class="mb-3">Question Details</h4>
+                    @forelse($quizAttempt->answers as $answer)
+                        <div class="card mb-3 {{ $answer->is_correct ? 'border-success' : 'border-danger' }}">
+                            <div class="card-body">
+                                <h5 class="card-title">Question {{ $loop->iteration }}</h5>
+                                <p class="card-text">{{ $answer->question->question_text }}</p>
+                                
+                                <div class="mt-3">
+                                    <p><strong>Your Answer:</strong></p>
+                                    @if($answer->question->type === 'multiple_choice')
+                                        <p>{{ $answer->option->option_text ?? 'Not answered' }}</p>
+                                    @else
+                                        <p>{{ $answer->answer_text ?? 'Not answered' }}</p>
                                     @endif
-                                @endif
+                                </div>
+
+                                <div class="mt-2">
+                                    @if($answer->is_correct)
+                                        <span class="badge bg-success">Correct</span>
+                                    @else
+                                        <span class="badge bg-danger">Incorrect</span>
+                                    @endif
+                                    <span class="ms-2">Marks: {{ $answer->marks_obtained ?? 0 }}</span>
+                                </div>
                             </div>
-                        @endif
+                        </div>
+                    @empty
+                        <div class="alert alert-info">
+                            No answers submitted yet.
+                        </div>
+                    @endforelse
+
+                    <div class="mt-4">
+                        <a href="{{ route('results.index') }}" class="btn btn-secondary">
+                            Back to Results
+                        </a>
                     </div>
                 </div>
-            @endforeach
+            </div>
         </div>
     </div>
-
-    <div class="text-center mb-4">
-        <a href="{{ route('results.index') }}" class="btn btn-secondary">Back to Results</a>
-    </div>
 </div>
+@endsection 
 @endsection 

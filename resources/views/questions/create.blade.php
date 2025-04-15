@@ -16,7 +16,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('quizzes.questions.store', $quiz) }}" method="POST">
+                    <form action="{{ route('quizzes.questions.store', $quiz) }}" method="POST" id="questionForm">
                         @csrf
 
                         <div class="mb-3">
@@ -29,7 +29,7 @@
 
                         <div class="mb-3">
                             <label for="type" class="form-label">Question Type</label>
-                            <select name="type" id="type" class="form-select @error('type') is-invalid @enderror" required onchange="handleTypeChange()">
+                            <select name="type" id="type" class="form-select @error('type') is-invalid @enderror" required>
                                 <option value="">Select a type</option>
                                 <option value="multiple_choice" {{ old('type') === 'multiple_choice' ? 'selected' : '' }}>Multiple Choice</option>
                                 <option value="true_false" {{ old('type') === 'true_false' ? 'selected' : '' }}>True/False</option>
@@ -52,11 +52,11 @@
                             <div id="trueFalseOptions" style="display: none;">
                                 <h6 class="mb-3">Select Correct Answer</h6>
                                 <div class="form-check mb-2">
-                                    <input type="radio" name="true_false_answer" value="1" class="form-check-input" required>
+                                    <input type="radio" name="true_false_answer" value="1" class="form-check-input" {{ old('true_false_answer') === '1' ? 'checked' : '' }}>
                                     <label class="form-check-label">True</label>
                                 </div>
                                 <div class="form-check">
-                                    <input type="radio" name="true_false_answer" value="0" class="form-check-input" required>
+                                    <input type="radio" name="true_false_answer" value="0" class="form-check-input" {{ old('true_false_answer') === '0' ? 'checked' : '' }}>
                                     <label class="form-check-label">False</label>
                                 </div>
                             </div>
@@ -81,7 +81,7 @@
     </div>
 </div>
 
-@push('scripts')
+@section('scripts')
 <script>
 // Function to handle question type changes
 function handleTypeChange() {
@@ -161,11 +161,66 @@ function updateRemoveButtons() {
     });
 }
 
+// Function to validate form before submission
+function validateForm(e) {
+    e.preventDefault();
+    
+    const type = document.getElementById('type').value;
+    const text = document.getElementById('text').value;
+    const marks = document.getElementById('marks').value;
+    
+    // Basic validation
+    if (!text || !type || !marks) {
+        alert('Please fill in all required fields');
+        return false;
+    }
+    
+    // Type-specific validation
+    if (type === 'multiple_choice') {
+        const options = document.querySelectorAll('input[name="options[]"]');
+        const correctOption = document.querySelector('input[name="correct_option"]:checked');
+        
+        if (options.length < 2) {
+            alert('Please add at least 2 options for multiple choice questions');
+            return false;
+        }
+        
+        let allFilled = true;
+        options.forEach(option => {
+            if (!option.value.trim()) {
+                allFilled = false;
+            }
+        });
+        
+        if (!allFilled) {
+            alert('Please fill in all option fields');
+            return false;
+        }
+        
+        if (!correctOption) {
+            alert('Please select the correct answer');
+            return false;
+        }
+    } else if (type === 'true_false') {
+        const trueFalseAnswer = document.querySelector('input[name="true_false_answer"]:checked');
+        if (!trueFalseAnswer) {
+            alert('Please select the correct answer for True/False question');
+            return false;
+        }
+    }
+    
+    // If all validations pass, submit the form
+    document.getElementById('questionForm').submit();
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Check if a type is already selected (e.g., from old input)
     handleTypeChange();
+    
+    // Add form submission handler
+    document.getElementById('type').addEventListener('change', handleTypeChange);
+    document.getElementById('questionForm').addEventListener('submit', validateForm);
 });
 </script>
-@endpush
 @endsection 

@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
     
     // Quiz attempts routes
     Route::resource('quiz-attempts', QuizAttemptController::class);
+    Route::post('quiz-attempts/{quizAttempt}/submit', [QuizAttemptController::class, 'submit'])->name('quiz-attempts.submit');
     
     // Answers routes
     Route::resource('answers', AnswerController::class);
@@ -58,4 +59,10 @@ Route::middleware('auth')->group(function () {
     
     // Results routes
     Route::resource('results', ResultsController::class)->only(['index', 'show']);
+});
+
+// Quiz Results Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/results', [QuizAttemptController::class, 'index'])->name('results.index');
+    Route::get('/results/{quizAttempt}', [QuizAttemptController::class, 'show'])->name('results.show');
 });

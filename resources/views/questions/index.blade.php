@@ -12,8 +12,16 @@
 
                 <div class="card-body">
                     @if (session('success'))
-                        <div class="alert alert-success" role="alert">
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
                             {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    @endif
+
+                    @if (session('error'))
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ session('error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     @endif
 
@@ -21,7 +29,7 @@
                         <div class="card mb-4">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
-                                    <h6 class="card-title">{{ $loop->iteration }}. {{ $question->text }}</h6>
+                                    <h6 class="card-title">{{ $loop->iteration }}. {{ $question->question_text }}</h6>
                                     <div class="btn-group">
                                         <a href="{{ route('quizzes.questions.edit', [$quiz, $question]) }}" class="btn btn-primary btn-sm">Edit</a>
                                         <form action="{{ route('quizzes.questions.destroy', [$quiz, $question]) }}" method="POST" class="d-inline">
@@ -32,15 +40,16 @@
                                     </div>
                                 </div>
 
-                                <p><strong>Type:</strong> {{ ucfirst($question->type) }}</p>
+                                <p><strong>Type:</strong> {{ ucfirst(str_replace('_', ' ', $question->question_type)) }}</p>
+                                <p><strong>Marks:</strong> {{ $question->marks }}</p>
 
-                                @if($question->type === 'multiple_choice' || $question->type === 'true_false')
+                                @if($question->question_type === 'multiple_choice' || $question->question_type === 'true_false')
                                     <div class="options">
                                         <p><strong>Options:</strong></p>
                                         <ul class="list-group">
                                             @foreach($question->options as $option)
                                                 <li class="list-group-item @if($option->is_correct) list-group-item-success @endif">
-                                                    {{ $option->text }}
+                                                    {{ $option->option_text }}
                                                     @if($option->is_correct)
                                                         <span class="badge bg-success float-end">Correct Answer</span>
                                                     @endif
